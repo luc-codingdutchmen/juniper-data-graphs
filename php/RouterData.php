@@ -30,20 +30,18 @@ class RouterData {
         $if_outOctets = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.16");
         $if_outUcastPkts = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.17");
         $if_outNUcastPkts = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.18");
-error_log(print_r($if_oper_status_snmp, true));
-
 
         foreach ($interfaces as $key => $value) {
-            $interfaces[$key]['operationStatus'] = trim(substr($if_oper_status_snmp['IF-MIB::ifOperStatus.' . $key], 9));
-            $interfaces[$key]['adminStatus'] = trim(substr($if_admin_status_snmp['IF-MIB::ifAdminStatus.' . $key], 9));
+            $interfaces[$key]['operationStatus'] = trim(substr($if_oper_status_snmp['iso.3.6.1.2.1.2.2.1.8.' . $key], 9));
+            $interfaces[$key]['adminStatus'] = trim(substr($if_admin_status_snmp['iso.3.6.1.2.1.2.2.1.7.' . $key], 9));
 
-            $interfaces[$key]['in_bytes'] = trim(substr($if_inOctets['IF-MIB::ifInOctets.' . $key], 11));
-            $interfaces[$key]['in_unicast_packets'] = trim(substr($if_inUcastPkts['IF-MIB::ifInUcastPkts.' . $key], 11));
-            $interfaces[$key]['in_not_unicast_packets'] = trim(substr($if_inNUcastPkts['IF-MIB::ifInNUcastPkts.' . $key], 11));
+            $interfaces[$key]['in_bytes'] = trim(substr($if_inOctets['iso.3.6.1.2.1.2.2.1.10.' . $key], 11));
+            $interfaces[$key]['in_unicast_packets'] = trim(substr($if_inUcastPkts['iso.3.6.1.2.1.2.2.1.11.' . $key], 11));
+            $interfaces[$key]['in_not_unicast_packets'] = trim(substr($if_inNUcastPkts['iso.3.6.1.2.1.2.2.1.12.' . $key], 11));
             
-            $interfaces[$key]['out_bytes'] = trim(substr($if_outOctets['IF-MIB::ifOutOctets.' . $key], 11));
-            $interfaces[$key]['out_unicast_packets'] = trim(substr($if_outUcastPkts['IF-MIB::ifOutUcastPkts.' . $key], 11));
-            $interfaces[$key]['out_not_unicast_packets'] = trim(substr($if_outNUcastPkts['IF-MIB::ifOutNUcastPkts.' . $key], 11));  }
+            $interfaces[$key]['out_bytes'] = trim(substr($if_outOctets['iso.3.6.1.2.1.2.2.1.16.' . $key], 11));
+            $interfaces[$key]['out_unicast_packets'] = trim(substr($if_outUcastPkts['iso.3.6.1.2.1.2.2.1.17.' . $key], 11));
+            $interfaces[$key]['out_not_unicast_packets'] = trim(substr($if_outNUcastPkts['iso.3.6.1.2.1.2.2.1.18.' . $key], 11));  }
             
         $type = [];
         $slot = [];
@@ -83,41 +81,41 @@ error_log(print_r($if_oper_status_snmp, true));
         $pattern = "/([a-z]{2,4})-?(\d)?\/?(\d)?\/?(\d+)?\.?(\d+)?/";
         $matches = [];
         preg_match($pattern, $if, $matches);
-        
+
         return [
-            "type" => $matches[1] ?: null,
-            "slot" => $matches[2] ?: null,
-            "pim-or-ioc" => $matches[3] ?: null,
-            "port" => $matches[4] ?: null,
-            "logical-interface" => $matches[4] ?: null
+            "type" => @$matches[1] ?: null,
+            "slot" => @$matches[2] ?: null,
+            "pim-or-ioc" => @$matches[3] ?: null,
+            "port" => @$matches[4] ?: null,
+            "logical-interface" => @$matches[4] ?: null
         ];
     }
-    
+ 
     static function write_data($data, $sysname, $timestamp) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
             "INSERT INTO `datatraffic`.`traffic` (
-                `machine`, 
+                `machine`,
                 `interface`,
-                `timestamp`, 
-                `in_bytes`, 
-                `in_u_packets`, 
-                `in_nu_packets`, 
-                `out_bytes`, 
-                `out_u_packets`, 
-                `out_nu_packets`, 
-                `if_weight`, 
-                `oper_status`, 
+                `timestamp`,
+                `in_bytes`,
+                `in_u_packets`,
+                `in_nu_packets`,
+                `out_bytes`,
+                `out_u_packets`,
+                `out_nu_packets`,
+                `if_weight`,
+                `oper_status`,
                 `admin_status`
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )"
         );
-        
+
         foreach ($data as $key => $interface) {
             $data = [
-                $sysname,
-                $interface['name'],
+                str_replace('"', '', $sysname),
+                str_replace('"', '', $interface['name']),
                 $timestamp,
                 $interface['in_bytes'],
                 $interface['in_unicast_packets'],
