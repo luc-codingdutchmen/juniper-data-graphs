@@ -1,7 +1,9 @@
 <?php
+require_once('config.php');
+
 class RouterData {
     static $pdo = null;
-    
+
     static function run($host, $time) {
         printf("run: %d\n", $time);
         $community = "public";
@@ -9,17 +11,17 @@ class RouterData {
         $interfaces_snmp = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.2");
         $interfaces = [];
         foreach ($interfaces_snmp as $key => $value) {
-            $dotpos = strpos($key, '.');
+            $dotpos = strrpos($key, '.');
             $id = substr($key, $dotpos+1 , strlen($key) - $dotpos);
-            
-            $interfaces[$id] = [ 
+
+            $interfaces[$id] = [
                 "numeric_id" => $id,
                 "name" => trim(substr($value, 8))
             ];
         }
-        
+
         $sysname = trim(substr(snmp2_get($host, $community, ".1.3.6.1.2.1.1.5.0"), 8));
-        
+
         $if_oper_status_snmp = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.8");
         $if_admin_status_snmp = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.7");
         $if_inOctets = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.10");
@@ -28,11 +30,13 @@ class RouterData {
         $if_outOctets = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.16");
         $if_outUcastPkts = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.17");
         $if_outNUcastPkts = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.18");
-        
+error_log(print_r($if_oper_status_snmp, true));
+
+
         foreach ($interfaces as $key => $value) {
             $interfaces[$key]['operationStatus'] = trim(substr($if_oper_status_snmp['IF-MIB::ifOperStatus.' . $key], 9));
             $interfaces[$key]['adminStatus'] = trim(substr($if_admin_status_snmp['IF-MIB::ifAdminStatus.' . $key], 9));
-            
+
             $interfaces[$key]['in_bytes'] = trim(substr($if_inOctets['IF-MIB::ifInOctets.' . $key], 11));
             $interfaces[$key]['in_unicast_packets'] = trim(substr($if_inUcastPkts['IF-MIB::ifInUcastPkts.' . $key], 11));
             $interfaces[$key]['in_not_unicast_packets'] = trim(substr($if_inNUcastPkts['IF-MIB::ifInNUcastPkts.' . $key], 11));
@@ -178,8 +182,9 @@ class RouterData {
     }
 
     static function getPDO() {
+	global $config;
         if(null == self::$pdo) {
-            self::$pdo = new PDO('mysql:host=127.0.0.1;port=3306;dbname=datatraffic', 'root', 'root', array( PDO::ATTR_PERSISTENT => false));;
+            self::$pdo = new PDO($config['dsn'], $config['user'], $config['password'], array( PDO::ATTR_PERSISTENT => false));;
         }
         return self::$pdo;
     }
