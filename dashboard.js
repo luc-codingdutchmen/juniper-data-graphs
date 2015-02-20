@@ -94,7 +94,6 @@ function setData(ifid, data) {
             t = (t - (t%(60*1000)));
             $("#" + hchartID).highcharts().xAxis[0].update({ min: (t - (24*3600*1000)) });
             $("#" + hchartID).highcharts().xAxis[0].update({ max: t });
-            console.log($("#" + hchartID).highcharts());
         }
     });
 }
