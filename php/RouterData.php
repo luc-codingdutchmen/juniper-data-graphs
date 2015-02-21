@@ -151,7 +151,7 @@ class RouterData {
     static function get_graph_data($device, $interface) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
-            "SELECT `timestamp`, `in_bytes`, `in_u_packets`, `in_nu_packets`, `out_bytes`, `out_u_packets`, `out_nu_packets` FROM traffic WHERE `machine` = ? AND `interface` = ?"
+            "SELECT `timestamp`,`in_bytes`, `in_u_packets`, `in_nu_packets`, `out_bytes`, `out_u_packets`, `out_nu_packets` FROM traffic WHERE `machine` = ? AND `interface` = ?"
         );
         $sth->execute(array($device, $interface));
         $mysqlResult = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -168,12 +168,12 @@ class RouterData {
                 $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_u_packets'] = 0;
                 $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_nu_packets'] = 0;
             } else {
-                $deltaValuesArray[$mysqlValue['timestamp']]['delta_in_bytes'] = $theseValues['in_bytes'] - $prevValues['in_bytes'];
-                $deltaValuesArray[$mysqlValue['timestamp']]['delta_in_u_packets'] = $theseValues['in_u_packets'] - $prevValues['in_u_packets'];
-                $deltaValuesArray[$mysqlValue['timestamp']]['delta_in_nu_packets'] = $theseValues['in_nu_packets'] - $prevValues['in_nu_packets'];
-                $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_bytes'] = $theseValues['out_bytes'] - $prevValues['out_bytes'];
-                $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_u_packets'] = $theseValues['out_u_packets'] - $prevValues['out_u_packets'];
-                $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_nu_packets'] = $theseValues['out_nu_packets'] - $prevValues['out_nu_packets'];
+                $deltaValuesArray[$mysqlValue['timestamp']]['delta_in_bytes'] =	max($theseValues['in_bytes'] - $prevValues['in_bytes'], 0);
+                $deltaValuesArray[$mysqlValue['timestamp']]['delta_in_u_packets'] = max($theseValues['in_u_packets'] - $prevValues['in_u_packets'], 0);
+                $deltaValuesArray[$mysqlValue['timestamp']]['delta_in_nu_packets'] = max($theseValues['in_nu_packets'] - $prevValues['in_nu_packets'], 0);
+                $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_bytes'] = max($theseValues['out_bytes'] - $prevValues['out_bytes'],0);
+                $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_u_packets'] = max($theseValues['out_u_packets'] - $prevValues['out_u_packets'], 0);
+                $deltaValuesArray[$mysqlValue['timestamp']]['delta_out_nu_packets'] = max($theseValues['out_nu_packets'] - $prevValues['out_nu_packets'], 0);
             }
         }
         return $deltaValuesArray;

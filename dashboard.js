@@ -24,6 +24,8 @@ function setDevices() {
 
 function selectDevice(device) { 
     selectedDevice = device;
+    interfaces = [];
+    $("#iflist").empty();
     $.getJSON( "php/getInterfaces.php", { device: device }, function( data ) {
         $.each( data, function( index, value ) {
             interfaces[index] = [];
@@ -94,11 +96,16 @@ function setData(ifid, data) {
             t = (t - (t%(60*1000)));
             $("#" + hchartID).highcharts().xAxis[0].update({ min: (t - (24*3600*1000)) });
             $("#" + hchartID).highcharts().xAxis[0].update({ max: t });
+            $("#" + hchartID).highcharts().redraw();
         }
     });
 }
 
 function setGraphs() { 
+    kb = 1000;
+    mb = 1000*1000;
+    gb = 1000*1000*1000;
+
     $("#graphcontainer").empty();
     $.each( interfaces, function( index, value ) {
         if(value.enabled) {
@@ -113,7 +120,7 @@ function setGraphs() {
                 chart: {
                     ignoreHiddenSeries : false,
                     zoomType: 'x',
-                    height: 200
+                    height: 300
                 },
                 title: {
                     text: value['name']
@@ -135,7 +142,18 @@ function setGraphs() {
                         align: 'left',
                         x: 3,
                         y: 16,
-                        format: '{value:.,0f}'
+                        formatter: function() {
+                            var maxElement = this.axis.max;
+                            if (maxElement > gb) {
+                               return (this.value / gb).toFixed(1) + " GB";
+                            } else if (maxElement > mb) {
+                                return (this.value / mb).toFixed(1) + " MB";
+                            } else if (maxElement > kb) {
+                                return (this.value / kb).toFixed(1) + " KB";
+                            } else {
+                                return (this.value) + " B";
+                            }
+                        }
                     },
                     showFirstLabel: false
                 }, { // right y axis
@@ -156,10 +174,11 @@ function setGraphs() {
 
                 legend: {
                     align: 'left',
-                    verticalAlign: 'top',
+                    verticalAlign: 'middle',
+		    layout: 'vertical',
                     y: 20,
-                    floating: true,
-                    borderWidth: 0
+                    floating: false,
+                    borderWidth: 1
                 },
 
                 tooltip: {
@@ -171,49 +190,57 @@ function setGraphs() {
                     name: 'Incoming Bytes',
                     lineWidth: 1,
                     yAxis: 0,
-                    marker: {
-                        radius: 4
-                    }
+		    visible: false,
+		    id: 'inbytesdata'
                 },{
                     name: 'Incoming Unicast Packets',
                     lineWidth: 1,
                     yAxis: 1,
-                    visible: false,
-                    marker: {
-                        radius: 4
-                    }
+                    visible: false
                 },{
                     name: 'Incoming Non-Unicast Packets',
                     lineWidth: 1,
                     yAxis: 1,
-                    visible: false,
-                    marker: {
-                        radius: 4
-                    }
+                    visible: false
                 },{
                     name: 'Outgoing Bytes',
                     lineWidth: 1,
+		    visible: false,
                     yAxis: 0,
-                    marker: {
-                        radius: 4
-                    }
+		    id: 'outbytesdata'
                 },{
                     name: 'Outgoing Unicast Packets',
                     lineWidth: 1,
                     yAxis: 1,
-                    visible: false,
-                    marker: {
-                        radius: 4
-                    }
+                    visible: false
                 },{
                     name: 'Outgoing Non-Unicast Packets',
                     lineWidth: 1,
                     yAxis: 1,
-                    visible: false,
-                    marker: {
-                        radius: 4
-                    }
-                }]
+                    visible: false
+                },{
+                    name: 'Incoming Bytes mov. avg.',
+		    color: '#F00',
+                    showInLegend: true,
+                    lineWidth: 1,
+                    linkedTo: 'inbytesdata',
+		    type: 'trendline',
+		    algorithm: 'SMA',
+                    periods: 15,
+                    yAxis: 0,
+                    visible: true
+                },{
+                    name: 'Outgoing Bytes mov. avg.',
+		    color: '#000',
+                    showInLegend: true,
+                    lineWidth: 1,
+                    linkedTo: 'outbytesdata',
+		    type: 'trendline',
+		    algorithm: 'SMA',
+                    periods: 15,
+                    yAxis: 0,
+                    visible: true
+		}]
             });
         }
     });
