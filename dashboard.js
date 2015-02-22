@@ -2,8 +2,16 @@ var interfaces = [];
 var selectedDevice = null;
 var timer = null;
 var refreshrate = 20;
+var sma_samples = 10;
 
 $(function() {
+    var d = new Date()
+    Highcharts.setOptions({
+        global: {
+            timezoneOffset: d.getTimezoneOffset()
+        }
+    });
+
     setDevices();
     timer = window.setInterval(updateGraphs, refreshrate*1000);
 });
@@ -63,12 +71,12 @@ function updateGraphs() {
                 outNUPackets = [];
 
                 $.each( data, function( index, value ) {
-                    inBytes.push([value.timestamp*1000, parseInt(value.delta_in_bytes)]);
-                    inUPackets.push([value.timestamp*1000, parseInt(value.delta_in_u_packets)]);
-                    inNUPackets.push([value.timestamp*1000, parseInt(value.delta_in_nu_packets)]);
-                    outBytes.push([value.timestamp*1000, parseInt(value.delta_out_bytes)]);
-                    outUPackets.push([value.timestamp*1000, parseInt(value.delta_out_u_packets)]);
-                    outNUPackets.push([value.timestamp*1000, parseInt(value.delta_out_nu_packets)]);
+                    inBytes.push([value.timestamp*1000, parseInt(value.delta_in_bytes, 10)]);
+                    inUPackets.push([value.timestamp*1000, parseInt(value.delta_in_u_packets, 10)]);
+                    inNUPackets.push([value.timestamp*1000, parseInt(value.delta_in_nu_packets, 10)]);
+                    outBytes.push([value.timestamp*1000, parseInt(value.delta_out_bytes, 10)]);
+                    outUPackets.push([value.timestamp*1000, parseInt(value.delta_out_u_packets, 10)]);
+                    outNUPackets.push([value.timestamp*1000, parseInt(value.delta_out_nu_packets, 10)]);
                 });
 
                 setData(value['name'], [
@@ -91,6 +99,18 @@ function setData(ifid, data) {
             for(var i=0; i<6; i++){
                 $("#" + hchartID).highcharts().series[i].setData(data[i]);
             }
+
+	    var sma = simple_moving_averager(sma_samples);
+	    var max = 0;
+ 	    for( var i = 0; i < data[0].length; i++ ){
+		var avg = sma(data[0][i][1]);
+	        if (avg > max) { max = avg; }
+		avg = sma(data[3][i][1]);
+	        if (avg > max) { max = avg; }
+	    }
+
+	    $("#" + hchartID).highcharts().yAxis[0].update({max: max});
+
             var d = new Date();
             var t = d.getTime();
             t = (t - (t%(60*1000)));
@@ -101,6 +121,21 @@ function setData(ifid, data) {
     });
 }
 
+function simple_moving_averager(period) {
+    var nums = [];
+    return function(num) {
+        nums.push(num);
+        if (nums.length > period)
+            nums.splice(0,1);  // remove the first element of the array
+        var sum = 0;
+        for (var i in nums)
+            sum += nums[i];
+        var n = period;
+        if (nums.length < period)
+            n = nums.length;
+        return(sum/n);
+    }
+}
 function setGraphs() { 
     kb = 1000;
     mb = 1000*1000;
@@ -128,7 +163,8 @@ function setGraphs() {
                 xAxis: {
                     type: "datetime",
                     dateTimeLabelFormats: {
-                        day: '%h:%m'
+                        minute: '%H:%M',
+                        hour: '%H:%M'
                     },
                     min: t - (24*3600*1000),
                     max: t
@@ -226,7 +262,7 @@ function setGraphs() {
                     linkedTo: 'inbytesdata',
 		    type: 'trendline',
 		    algorithm: 'SMA',
-                    periods: 15,
+                    periods: sma_samples,
                     yAxis: 0,
                     visible: true
                 },{
@@ -237,7 +273,7 @@ function setGraphs() {
                     linkedTo: 'outbytesdata',
 		    type: 'trendline',
 		    algorithm: 'SMA',
-                    periods: 15,
+                    periods: sma_samples,
                     yAxis: 0,
                     visible: true
 		}]
