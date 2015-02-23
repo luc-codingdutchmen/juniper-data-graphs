@@ -113,19 +113,22 @@ function setData(ifid, data) {
 
 	    var sma = simple_moving_averager(sma_samples);
 	    var max = 0;
+	    var in_avg = [];
+	    var out_avg = [];
  	    for( var i = 0; i < data[0].length; i++ ){
 		var avg = sma(data[0][i][1]);
-	        if (avg > max) { max = avg; }
-		avg = sma(data[0][i][1]);
+		in_avg.push([data[0][i][0], avg]);
 	        if (avg > max) { max = avg; }
 	    }
 
  	    for( var i = 0; i < data[3].length; i++ ){
 		var avg = sma(data[3][i][1]);
-	        if (avg > max) { max = avg; }
-		avg = sma(data[3][i][1]);
+		out_avg.push([data[3][i][0], avg]);
 	        if (avg > max) { max = avg; }
 	    }
+
+	    $("#" + hchartID).highcharts().series[6].setData(in_avg, true);  
+	    $("#" + hchartID).highcharts().series[7].setData(out_avg, true);  
 
 	    $("#" + hchartID).highcharts().yAxis[0].update({max: max});
 
@@ -296,10 +299,6 @@ function setGraphs() {
 		    color: '#F00',
                     showInLegend: true,
                     lineWidth: 1,
-                    linkedTo: 'inbytesdata',
-		    type: 'trendline',
-		    algorithm: 'SMA',
-                    periods: sma_samples,
                     yAxis: 0,
                     visible: true
                 },{
@@ -307,10 +306,6 @@ function setGraphs() {
 		    color: '#000',
                     showInLegend: true,
                     lineWidth: 1,
-                    linkedTo: 'outbytesdata',
-		    type: 'trendline',
-		    algorithm: 'SMA',
-                    periods: sma_samples,
                     yAxis: 0,
                     visible: true
 		}]
