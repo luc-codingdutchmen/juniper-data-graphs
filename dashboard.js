@@ -12,6 +12,17 @@ $(function() {
         }
     });
 
+    if (!String.prototype.format) {
+        String.prototype.format = function() {
+            var args = arguments;
+            return this.replace(/{(\d+)}/g, function(match, number) { 
+                return typeof args[number] != 'undefined'
+                ? args[number]
+                : match;
+            });
+        };
+    };
+
     setDevices();
     timer = window.setInterval(updateGraphs, refreshrate*1000);
 });
@@ -97,13 +108,20 @@ function setData(ifid, data) {
         if(value['name'] == ifid) {
             var hchartID = "ifgraph-" + index;
             for(var i=0; i<6; i++){
-                $("#" + hchartID).highcharts().series[i].setData(data[i]);
+                $("#" + hchartID).highcharts().series[i].setData(data[i], true);
             }
 
 	    var sma = simple_moving_averager(sma_samples);
 	    var max = 0;
  	    for( var i = 0; i < data[0].length; i++ ){
 		var avg = sma(data[0][i][1]);
+	        if (avg > max) { max = avg; }
+		avg = sma(data[0][i][1]);
+	        if (avg > max) { max = avg; }
+	    }
+
+ 	    for( var i = 0; i < data[3].length; i++ ){
+		var avg = sma(data[3][i][1]);
 	        if (avg > max) { max = avg; }
 		avg = sma(data[3][i][1]);
 	        if (avg > max) { max = avg; }
@@ -219,7 +237,26 @@ function setGraphs() {
 
                 tooltip: {
                     shared: true,
-                    crosshairs: true
+                    crosshairs: [true, false],
+		    pointFormatter: function() {
+                        var value = this.y;
+			var formatted_value = value;
+			var prefix = '<span style="color:{point.color}">\u25CF</span> {series.name}: <b>{point.y}';
+			var unit = ' B';
+                        if (value > gb) {
+			    formatted_value = parseFloat(value / gb).toFixed(2);
+                            unit = " GB";
+                        } else if (value > mb) {
+			    formatted_value = parseFloat(value / mb).toFixed(2);
+                            unit = " MB";
+                        } else if (value > kb) {
+			    formatted_value = parseFloat(value / kb).toFixed(2);
+                            unit = " KB";
+                        }
+			var suffix = '</b>.<br/>'
+
+			return '<span style="color:{point.color}">\u25CF</span>{0}: <b>{1}{2}</b><br/>'.format(this.series.name, formatted_value, unit);
+                    }
                 },
 
                 series: [{
