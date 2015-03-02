@@ -24,13 +24,29 @@
                     <a class="navbar-brand" href="#">Router Data Graph</a>
                 </div>
                 <div id="navbar" class="navbar-collapse collapse">
-                    <div class="dropdown nav navbar-nav navbar-right">
-                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-expanded="true">
-                            Devices
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1" id="deviceselectdropdown"></ul>
-                    </div>
+                    <ul class="nav navbar-nav navbar-right"> 
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" id="dropdownSettings" data-toggle="dropdown" aria-expanded="true">
+                                Settings
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownSettings" id="deviceselectdropdown1">
+                                <li role="presentation">
+                                    <label>
+                                        <a role="menuitem" tabindex="-1" >Y-ax on mov. avg.</a>
+                                        <input type="checkbox" id="setMaxMovAvg" checked="checked">
+                                    </label>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" id="dropdownDevices" data-toggle="dropdown" aria-expanded="true">
+                                Devices
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDevices" id="deviceselectdropdown"></ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>

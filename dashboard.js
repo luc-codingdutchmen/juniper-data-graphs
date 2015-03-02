@@ -3,6 +3,7 @@ var selectedDevice = null;
 var timer = null;
 var refreshrate = 20;
 var sma_samples = 10;
+var maxToMovAvg = true;
 
 $(function() {
     var d = new Date()
@@ -10,6 +11,11 @@ $(function() {
         global: {
             timezoneOffset: d.getTimezoneOffset()
         }
+    });
+
+    $('#setMaxMovAvg').change(function() {
+        maxToMovAvg = $(this).is(':checked');
+        updateGraphs();
     });
 
     if (!String.prototype.format) {
@@ -111,26 +117,35 @@ function setData(ifid, data) {
                 $("#" + hchartID).highcharts().series[i].setData(data[i], true);
             }
 
-	    var sma = simple_moving_averager(sma_samples);
-	    var max = 0;
-	    var in_avg = [];
-	    var out_avg = [];
- 	    for( var i = 0; i < data[0].length; i++ ){
-		var avg = sma(data[0][i][1]);
-		in_avg.push([data[0][i][0], avg]);
-	        if (avg > max) { max = avg; }
-	    }
+            var sma = simple_moving_averager(sma_samples);
+            var maxMovAvg = 0;
+            var realMax = 0;
+            var in_avg = [];
+            var out_avg = [];
+            for( var i = 0; i < data[0].length; i++ ){
+                var value = data[0][i][1];
+                var avg = sma(value);
+                in_avg.push([data[0][i][0], avg]);
+                if (avg > maxMovAvg) { maxMovAvg = avg; }
+                if (value > realMax) { realMax = value; }
+            }
 
- 	    for( var i = 0; i < data[3].length; i++ ){
-		var avg = sma(data[3][i][1]);
-		out_avg.push([data[3][i][0], avg]);
-	        if (avg > max) { max = avg; }
-	    }
+            for( var i = 0; i < data[3].length; i++ ){
+                var value = data[3][i][1];
+                var avg = sma(value);
+                out_avg.push([data[3][i][0], avg]);
+                if (avg > maxMovAvg) { maxMovAvg = avg; }
+                if (value > realMax) { realMax = value; }
+            }
 
-	    $("#" + hchartID).highcharts().series[6].setData(in_avg, true);  
-	    $("#" + hchartID).highcharts().series[7].setData(out_avg, true);  
-
-	    $("#" + hchartID).highcharts().yAxis[0].update({max: max});
+            $("#" + hchartID).highcharts().series[6].setData(in_avg, true);  
+            $("#" + hchartID).highcharts().series[7].setData(out_avg, true);  
+           
+            if(maxToMovAvg == true) {
+                $("#" + hchartID).highcharts().yAxis[0].update({max: maxMovAvg});
+            } else {
+                $("#" + hchartID).highcharts().yAxis[0].update({max: realMax});
+            }
 
             var d = new Date();
             var t = d.getTime();
@@ -298,14 +313,14 @@ function setGraphs() {
                     name: 'Incoming Bytes mov. avg.',
 		    color: '#F00',
                     showInLegend: true,
-                    lineWidth: 1,
+                    lineWidth: 2,
                     yAxis: 0,
                     visible: true
                 },{
                     name: 'Outgoing Bytes mov. avg.',
 		    color: '#000',
                     showInLegend: true,
-                    lineWidth: 1,
+                    lineWidth: 2,
                     yAxis: 0,
                     visible: true
 		}]

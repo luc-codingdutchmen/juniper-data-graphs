@@ -151,7 +151,18 @@ class RouterData {
     static function get_graph_data($device, $interface) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
-            "SELECT `timestamp`,`in_bytes`, `in_u_packets`, `in_nu_packets`, `out_bytes`, `out_u_packets`, `out_nu_packets` FROM traffic WHERE `machine` = ? AND `interface` = ?"
+            "SELECT 
+                `timestamp`,
+                `in_bytes`,
+                `in_u_packets`,
+                `in_nu_packets`,
+                `out_bytes`,
+                `out_u_packets`,
+                `out_nu_packets` 
+            FROM traffic 
+            WHERE `machine` = ? 
+            AND `interface` = ?
+            AND `timestamp` >= (UNIX_TIMESTAMP() - (24*3600))"
         );
         $sth->execute(array($device, $interface));
         $mysqlResult = $sth->fetchAll(PDO::FETCH_ASSOC);
