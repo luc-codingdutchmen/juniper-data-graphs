@@ -1,5 +1,5 @@
 <?php
-error_reporting(0);
+error_reporting(E_ALL);
 require_once('config.php');
 
 class RouterData {
@@ -117,7 +117,7 @@ class RouterData {
             $sth->execute([$sysname]);
             return $dbh->lastInsertId();
         } else {
-           return $mysqlResult[0];
+           return $mysqlResult[0][0];
         }
 
         return null;
@@ -142,7 +142,7 @@ class RouterData {
             $sth = $dbh->prepare(
                 "INSERT INTO `datatraffic`.`interface` (
                     `machine_id`,
-                    `interface`,
+                    `interface_name`,
                     `if_weight`
                 ) VALUES (
                     ?, ?, ?
@@ -184,7 +184,7 @@ class RouterData {
 
         foreach ($data as $key => $interface) {
             $interface_id = self::get_or_insert_interface_id (
-                $machine_id, 
+                $machine_id,
                 $interface['name'],
                 $interface['ifweight']
             );
