@@ -1,5 +1,5 @@
 var interfaces = [];
-var selectedDevice = null;
+var selectedMachineID = null;
 var timer = null;
 var refreshrate = 20;
 var sma_samples = 10;
@@ -47,11 +47,11 @@ function setDevices() {
     });
 }
 
-function selectDevice(device) { 
-    selectedDevice = device;
+function selectDevice(machine_id) { 
+    selectedMachineID = machine_id;
     interfaces = [];
     $("#iflist").empty();
-    $.getJSON( "php/getInterfaces.php", { device: device }, function( data ) {
+    $.getJSON( "php/getInterfaces.php", { machine_id: machine_id }, function( data ) {
         $.each( data, function( index, value ) {
             interfaces[index] = [];
             interfaces[index]['name'] = value[0];
@@ -79,7 +79,7 @@ function setEnabled(ifid, enabled) {
 function updateGraphs() { 
     $.each( interfaces, function( index, value ) {
         if(value.enabled == true) {
-            $.getJSON( "php/getGraphData.php", { device: selectedDevice, interface: value['name'] }, function( data ) {
+            $.getJSON( "php/getGraphData.php", { device: selectedMachineID, interface: value['name'] }, function( data ) {
                 inBytes = [];
                 inUPackets = [];
                 inNUPackets = [];
