@@ -92,12 +92,82 @@ class RouterData {
         ];
     }
  
+    static private function get_or_insert_machine_id($sysname) {
+        $sysname = trim(str_replace('"', '', $sysname));
+
+        $dbh = self::getPDO();
+
+        $sth = $dbh->prepare(
+            "SELECT
+                `id`
+            FROM `machine`
+            WHERE `machine_name` = ?"
+        );
+        $sth->execute([$sysname]);
+        $mysqlResult = $sth->fetchAll(PDO::FETCH_NUM);
+
+        if(count($mysqlResult) <= 0 || false === $mysqlResult) {
+            $sth = $dbh->prepare(
+                "INSERT INTO `datatraffic`.`machine` (
+                    `machine_name`
+                ) VALUES (
+                    ?
+                )"
+            );
+            $sth->execute([$sysname]);
+            return $dbh->lastInsertId();
+        } else {
+           return $mysqlResult[0];
+        }
+
+        return null;
+    }
+ 
+    static private function get_or_insert_interface_id($machine_id, $interface, $weight) {
+        $interface = trim(str_replace('"', '', $interface));
+
+        $dbh = self::getPDO();
+
+        $sth = $dbh->prepare(
+            "SELECT
+                `id`
+            FROM `interface`
+            WHERE `machine_id` = ?
+            AND `interface_name` = ?"
+        );
+        $sth->execute([$machine_id, $interface]);
+        $mysqlResult = $sth->fetchAll(PDO::FETCH_NUM);
+
+        if(count($mysqlResult) <= 0 || false === $mysqlResult) {
+            $sth = $dbh->prepare(
+                "INSERT INTO `datatraffic`.`interface` (
+                    `machine_id`,
+                    `interface`,
+                    `if_weight`
+                ) VALUES (
+                    ?, ?, ?
+                )"
+            );
+            $sth->execute([$machine_id, $interface, $weight]);
+            return $dbh->lastInsertId();
+        } else {
+           return $mysqlResult[0];
+        }
+
+        return null;
+    }
+
     static function write_data($data, $sysname, $timestamp) {
         $dbh = self::getPDO();
+
+        $machine_id = self::get_or_insert_machine_id($sysname);
+
         $sth = $dbh->prepare(
             "INSERT INTO `datatraffic`.`traffic` (
                 `machine`,
+                `machine_id`,
                 `interface`,
+                `interface_id`,
                 `timestamp`,
                 `in_bytes`,
                 `in_u_packets`,
@@ -105,18 +175,25 @@ class RouterData {
                 `out_bytes`,
                 `out_u_packets`,
                 `out_nu_packets`,
-                `if_weight`,
                 `oper_status`,
                 `admin_status`
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )"
         );
 
         foreach ($data as $key => $interface) {
+            $interface_id = self::get_or_insert_interface_id (
+                $machine_id, 
+                $interface['name'],
+                $interface['ifweight']
+            );
+
             $data = [
                 str_replace('"', '', $sysname),
+                $machine_id,
                 str_replace('"', '', $interface['name']),
+                $interface_id,
                 $timestamp,
                 $interface['in_bytes'],
                 $interface['in_unicast_packets'],
@@ -124,7 +201,6 @@ class RouterData {
                 $interface['out_bytes'],
                 $interface['out_unicast_packets'],
                 $interface['out_not_unicast_packets'],
-                $interface['ifweight'],
                 $interface['operationStatus'],
                 $interface['adminStatus']
             ];
@@ -135,21 +211,24 @@ class RouterData {
     static function get_devices() {
         $dbh = self::getPDO();
         $sth = $dbh->query(
-            "SELECT DISTINCT `machine` FROM traffic"
+            "SELECT DISTINCT `machine_name` FROM `machine` ORDER BY `machine_name` ASC"
         );
         return $sth->fetchAll(PDO::FETCH_NUM);
     }
 
-    static function get_interfaces($device) {
+    static function get_interfaces($machine_id) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
-            "SELECT DISTINCT `interface` FROM traffic WHERE `machine` = ? ORDER BY `if_weight` ASC"
+            "SELECT DISTINCT `interface_name` AS `interface` 
+            FROM `interface` 
+            WHERE `machine_id` = ? 
+            ORDER BY `if_weight` ASC"
         );
-        $sth->execute(array($device));
+        $sth->execute([$machine_id]);
         return $sth->fetchAll(PDO::FETCH_NUM);
     }
 
-    static function get_graph_data($device, $interface) {
+    static function get_graph_data($machine_id, $interface_id) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
             "SELECT 
@@ -161,11 +240,11 @@ class RouterData {
                 `out_u_packets`,
                 `out_nu_packets` 
             FROM traffic 
-            WHERE `machine` = ? 
-            AND `interface` = ?
+            WHERE `machine_id` = ? 
+            AND `interface_id` = ?
             AND `timestamp` >= (UNIX_TIMESTAMP() - (24*3600))"
         );
-        $sth->execute(array($device, $interface));
+        $sth->execute([$machine_id, $interface_id]);
         $mysqlResult = $sth->fetchAll(PDO::FETCH_ASSOC);
         $deltaValuesArray = [];
         foreach ($mysqlResult as $mysqlValue) {
@@ -192,7 +271,7 @@ class RouterData {
     }
 
     static function getPDO() {
-	global $config;
+	    global $config;
         if(null == self::$pdo) {
             self::$pdo = new PDO($config['dsn'], $config['user'], $config['password'], array( PDO::ATTR_PERSISTENT => false));;
         }
