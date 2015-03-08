@@ -219,7 +219,9 @@ class RouterData {
     static function get_interfaces($machine_id) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
-            "SELECT DISTINCT `interface_name` AS `interface` 
+            "SELECT 
+                `id`,
+                `interface_name` AS `interface`
             FROM `interface` 
             WHERE `machine_id` = ? 
             ORDER BY `if_weight` ASC"
