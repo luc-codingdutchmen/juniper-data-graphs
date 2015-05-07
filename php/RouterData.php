@@ -151,7 +151,7 @@ class RouterData {
             $sth->execute([$machine_id, $interface, $weight]);
             return $dbh->lastInsertId();
         } else {
-           return $mysqlResult[0];
+           return $mysqlResult[0][0];
         }
 
         return null;
@@ -164,9 +164,7 @@ class RouterData {
 
         $sth = $dbh->prepare(
             "INSERT INTO `datatraffic`.`traffic` (
-                `machine`,
                 `machine_id`,
-                `interface`,
                 `interface_id`,
                 `timestamp`,
                 `in_bytes`,
@@ -178,7 +176,7 @@ class RouterData {
                 `oper_status`,
                 `admin_status`
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )"
         );
 
@@ -190,9 +188,7 @@ class RouterData {
             );
 
             $data = [
-                str_replace('"', '', $sysname),
                 $machine_id,
-                str_replace('"', '', $interface['name']),
                 $interface_id,
                 $timestamp,
                 $interface['in_bytes'],
@@ -207,42 +203,46 @@ class RouterData {
             $sth->execute($data);
         }
     }
-    
+
     static function get_devices() {
         $dbh = self::getPDO();
         $sth = $dbh->query(
-            "SELECT DISTINCT `machine_name` FROM `machine` ORDER BY `machine_name` ASC"
+            "SELECT
+		`id`,
+		`machine_name`
+	    FROM `machine`
+	    ORDER BY `machine_name` ASC"
         );
-        return $sth->fetchAll(PDO::FETCH_NUM);
+        return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
     static function get_interfaces($machine_id) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
-            "SELECT 
+            "SELECT
                 `id`,
-                `interface_name` AS `interface`
-            FROM `interface` 
-            WHERE `machine_id` = ? 
+                `interface_name`
+            FROM `interface`
+            WHERE `machine_id` = ?
             ORDER BY `if_weight` ASC"
         );
         $sth->execute([$machine_id]);
-        return $sth->fetchAll(PDO::FETCH_NUM);
+        return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
     static function get_graph_data($machine_id, $interface_id) {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
-            "SELECT 
+            "SELECT
                 `timestamp`,
                 `in_bytes`,
                 `in_u_packets`,
                 `in_nu_packets`,
                 `out_bytes`,
                 `out_u_packets`,
-                `out_nu_packets` 
-            FROM traffic 
-            WHERE `machine_id` = ? 
+                `out_nu_packets`
+            FROM `traffic`
+            WHERE `machine_id` = ?
             AND `interface_id` = ?
             AND `timestamp` >= (UNIX_TIMESTAMP() - (24*3600))"
         );

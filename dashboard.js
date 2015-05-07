@@ -4,6 +4,7 @@ var timer = null;
 var refreshrate = 20;
 var sma_samples = 10;
 var maxToMovAvg = true;
+var busyFetchingGraphs = false;
 
 $(function() {
     var d = new Date()
@@ -39,7 +40,7 @@ function setDevices() {
             $("#deviceselectdropdown").append(
                 '<li role="presentation">'+
                     '<a role="menuitem" tabindex="-1"' +
-                        'href="javascript:selectDevice(\''+value+'\')">'+value+
+                        'href="javascript:selectDevice(\''+value.id+'\')">'+value.machine_name+
                     '</a>'+
                 '</li>'
             );
@@ -49,15 +50,15 @@ function setDevices() {
 
 function selectDevice(machine_id) { 
     selectedMachineID = machine_id;
-    interfaces = [];
+    interfaces = {};
     $("#iflist").empty();
     $.getJSON( "php/getInterfaces.php", { machine_id: machine_id }, function( data ) {
         $.each( data, function( index, value ) {
-            interfaces[index] = [];
-            interfaces[index]['name'] = value[0];
-            interfaces[index]['enabled'] = false;
+	    interfaces[value.id] = [];
+            interfaces[value.id]['name'] = value.interface_name;
+            interfaces[value.id]['enabled'] = false;
             $("#iflist").append(
-                '<li><label><input type="checkbox" class="ifcb" id="cb-'+value+'">'+value+'</label></li>'
+                '<li><label><input type="checkbox" class="ifcb" id="cb-'+value.id+'">'+value.interface_name+'</label></li>'
             );
         });
         $('.ifcb').change(function() {
@@ -69,17 +70,22 @@ function selectDevice(machine_id) {
     });
 }
 function setEnabled(ifid, enabled) { 
-    $.each( interfaces, function( index, value ) {
-        if(value['name'] == ifid) {
+   $.each( interfaces, function( index, value ) {
+        if(index == ifid) {
             interfaces[index].enabled = enabled;
         }
     });
 }
 
 function updateGraphs() { 
+    if(busyFetchingGraphs) {
+        return;
+    }
+    busyFetchingGraphs = true;
+
     $.each( interfaces, function( index, value ) {
         if(value.enabled == true) {
-            $.getJSON( "php/getGraphData.php", { device: selectedMachineID, interface: value['name'] }, function( data ) {
+            $.getJSON( "php/getGraphData.php", { machine_id: selectedMachineID, interface_id: index }, function( data ) {
                 inBytes = [];
                 inUPackets = [];
                 inNUPackets = [];
@@ -104,6 +110,7 @@ function updateGraphs() {
                     outUPackets,
                     outNUPackets
                 ]);
+                busyFetchingGraphs = false;
             });
         }
     });
