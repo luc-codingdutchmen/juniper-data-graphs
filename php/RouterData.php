@@ -176,7 +176,9 @@ class RouterData {
                 `oper_status`,
                 `admin_status`
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?,
+		FROM_UNIXTIME(?),
+		?, ?, ?, ?, ?, ?, ?, ?
             )"
         );
 
@@ -234,7 +236,7 @@ class RouterData {
         $dbh = self::getPDO();
         $sth = $dbh->prepare(
             "SELECT
-                `timestamp`,
+                UNIX_TIMESTAMP(`timestamp`) AS `timestamp`,
                 `in_bytes`,
                 `in_u_packets`,
                 `in_nu_packets`,
