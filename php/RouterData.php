@@ -10,19 +10,34 @@ class RouterData {
         $community = "public";
 
         $interfaces_snmp = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.2");
-        $interfaces = [];
+        $interfaces_descr = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.31.1.1.1.18");
+	$descriptions = [];
+	$interfaces = [];
+
+        foreach ($interfaces_descr as $key => $value) {
+	    $dotpos = strrpos($key, '.');
+	    $id = substr($key, $dotpos+1 , strlen($key) - $dotpos);
+   	    $descr = trim(substr($value, 8));
+
+	    $descriptions[$id] = trim($descr);
+	}
+
         foreach ($interfaces_snmp as $key => $value) {
             $dotpos = strrpos($key, '.');
             $id = substr($key, $dotpos+1 , strlen($key) - $dotpos);
+   	    $ifname = trim(substr($value, 8));
+	    if(strlen($descriptions[$id]) > 0) {
+	        $ifname .= sprintf(" (%s)", $descriptions[$id]);
+	    }
 
-            $interfaces[$id] = [
+	    $interfaces[$id] = [
                 "numeric_id" => $id,
-                "name" => trim(substr($value, 8))
+                "name" => $ifname
             ];
         }
 
         $sysname = trim(substr(snmp2_get($host, $community, ".1.3.6.1.2.1.1.5.0"), 8));
-
+	
         $if_oper_status_snmp = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.8");
         $if_admin_status_snmp = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.7");
         $if_inOctets = snmp2_real_walk($host, $community, ".1.3.6.1.2.1.2.2.1.10");
@@ -39,11 +54,12 @@ class RouterData {
             $interfaces[$key]['in_bytes'] = trim(substr($if_inOctets['iso.3.6.1.2.1.2.2.1.10.' . $key], 11));
             $interfaces[$key]['in_unicast_packets'] = trim(substr($if_inUcastPkts['iso.3.6.1.2.1.2.2.1.11.' . $key], 11));
             $interfaces[$key]['in_not_unicast_packets'] = trim(substr($if_inNUcastPkts['iso.3.6.1.2.1.2.2.1.12.' . $key], 11));
-            
+
             $interfaces[$key]['out_bytes'] = trim(substr($if_outOctets['iso.3.6.1.2.1.2.2.1.16.' . $key], 11));
             $interfaces[$key]['out_unicast_packets'] = trim(substr($if_outUcastPkts['iso.3.6.1.2.1.2.2.1.17.' . $key], 11));
-            $interfaces[$key]['out_not_unicast_packets'] = trim(substr($if_outNUcastPkts['iso.3.6.1.2.1.2.2.1.18.' . $key], 11));  }
-            
+            $interfaces[$key]['out_not_unicast_packets'] = trim(substr($if_outNUcastPkts['iso.3.6.1.2.1.2.2.1.18.' . $key], 11));  
+        }
+
         $type = [];
         $slot = [];
         $pim_or_ioc = [];
