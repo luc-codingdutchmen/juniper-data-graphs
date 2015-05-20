@@ -79,6 +79,7 @@ function setEnabled(ifid, enabled) {
 
 function updateGraphs() { 
     if(busyFetchingGraphs) {
+	console.log("busy, backing off");
         return;
     }
     busyFetchingGraphs = true;
@@ -110,10 +111,10 @@ function updateGraphs() {
                     outUPackets,
                     outNUPackets
                 ]);
-                busyFetchingGraphs = false;
             });
         }
     });
+    busyFetchingGraphs = false;
 }
 
 function setData(ifid, data) { 
