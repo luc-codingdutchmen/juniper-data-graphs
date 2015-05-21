@@ -40,7 +40,7 @@ function setDevices() {
             $("#deviceselectdropdown").append(
                 '<li role="presentation">'+
                     '<a role="menuitem" tabindex="-1"' +
-                        'href="javascript:selectDevice(\''+value.id+'\')">'+value.machine_name+
+                        'href="javascript:selectDevice(\''+value.id+'\', \''+value.machine_name+'\')">'+value.machine_name+
                     '</a>'+
                 '</li>'
             );
@@ -48,10 +48,11 @@ function setDevices() {
     });
 }
 
-function selectDevice(machine_id) { 
+function selectDevice(machine_id, machine_name) { 
     selectedMachineID = machine_id;
     interfaces = {};
     $("#iflist").empty();
+    $("#nav-dev-title").text(machine_name);
     $.getJSON( "php/getInterfaces.php", { machine_id: machine_id }, function( data ) {
         $.each( data, function( index, value ) {
 	    interfaces[value.id] = [];

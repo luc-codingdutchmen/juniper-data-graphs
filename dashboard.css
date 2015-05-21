@@ -103,3 +103,14 @@ body {
   display: inline-block;
   border-radius: 50%;
 }
+
+#navbar-parent {
+    width: 100%;
+    text-align: center;
+    position: relative;
+}
+
+#nav-dev-title {
+    float:none;
+    line-height:50px;
+}
