@@ -199,7 +199,7 @@ function setGraphs() {
             $("#" + hchartID).highcharts({
                 chart: {
                     ignoreHiddenSeries : false,
-                    zoomType: 'x',
+                    zoomType: 'xy',
                     height: 300
                 },
                 title: {
