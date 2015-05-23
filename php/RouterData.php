@@ -262,8 +262,8 @@ class RouterData {
             FROM `traffic`
             WHERE `machine_id` = ?
             AND `interface_id` = ?
-            AND `timestamp` >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-	    LIMIT 1440"
+            AND `timestamp` >= DATE_SUB(NOW(), INTERVAL 25 HOUR)
+	    LIMIT 1500"
         );
         $sth->execute([$machine_id, $interface_id]);
         $mysqlResult = $sth->fetchAll(PDO::FETCH_ASSOC);
